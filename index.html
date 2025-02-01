@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apuestas Deportivas</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        .evento { margin: 10px; padding: 10px; border: 1px solid #ccc; display: inline-block; width: 300px; }
+        .evento input[type="checkbox"] { margin-right: 10px; }
+        #apuestas { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Apuestas Deportivas</h1>
+    <div id="eventos"></div>
+    <div id="apuestas">
+        <h2>Tu Selección</h2>
+        <form id="formApuestas">
+            <div id="seleccionApuestas"></div>
+            <input type="email" placeholder="Tu correo" id="correo" required>
+            <button type="button" onclick="calcularGanancias()">Calcular Ganancias y Enviar</button>
+        </form>
+    </div>
+
+    <script>
+        const eventos = [
+            { fecha: "2025-02-03", deporte: "Fútbol", equipo1: "Chelsea", equipo2: "West Ham", cuota: 1.8 },
+            { fecha: "2025-02-05", deporte: "Fútbol", equipo1: "Inter Milan", equipo2: "Lazio", cuota: 2.0 },
+            { fecha: "2025-02-05", deporte: "Fútbol", equipo1: "Juventus", equipo2: "Empoli", cuota: 1.7 },
+            { fecha: "2025-02-05", deporte: "Fútbol", equipo1: "AC Milan", equipo2: "AS Roma", cuota: 1.9 },
+            { fecha: "2025-02-05", deporte: "Fútbol", equipo1: "Bayer Leverkusen", equipo2: "FC Koln", cuota: 2.1 },
+            { fecha: "2025-02-05", deporte: "Fútbol", equipo1: "Newcastle", equipo2: "Arsenal", cuota: 2.2 },
+            { fecha: "2025-02-06", deporte: "Fútbol", equipo1: "Liverpool", equipo2: "Tottenham", cuota: 1.8 },
+            { fecha: "2025-02-07", deporte: "Fútbol", equipo1: "Bayern Munich", equipo2: "Werder Bremen", cuota: 1.6 },
+            { fecha: "2025-02-08", deporte: "Fútbol", equipo1: "Wolfsburg", equipo2: "Bayer Leverkusen", cuota: 2.0 },
+            { fecha: "2025-02-08", deporte: "Fútbol", equipo1: "Dortmund", equipo2: "Stuttgart", cuota: 1.7 },
+            { fecha: "2025-02-08", deporte: "Baloncesto", equipo1: "CB Villarrobledo", equipo2: "Real Madrid B", cuota: 2.5 },
+            { fecha: "2025-02-08", deporte: "Baloncesto", equipo1: "Baloncesto Criptana", equipo2: "CB Mora", cuota: 2.0 },
+            { fecha: "2025-02-08", deporte: "Fútbol Americano", equipo1: "New England Patriots", equipo2: "Dallas Cowboys", cuota: 2.2 },
+            { fecha: "2025-02-08", deporte: "MMA", evento: "Boxam Internacional", lugar: "La Nucía, Alicante", cuota: 1.9 }
+        ];
+
+        function generarEventos() {
+            let contenedor = document.getElementById("eventos");
+            eventos.forEach((evento, index) => {
+                let div = document.createElement("div");
+                div.className = "evento";
+                div.innerHTML = `
+                    <input type="checkbox" id="evento${index}" data-index="${index}">
+                    <label for="evento${index}">
+                        <h3>${evento.deporte}: ${evento.equipo1} vs ${evento.equipo2 || evento.evento}</h3>
+                        <p>Fecha: ${evento.fecha}</p>
+                        <p>Cuota: ${evento.cuota}</p>
+                    </label>
+                `;
+                contenedor.appendChild(div);
+            });
+        }
+
+        function calcularGanancias() {
+            let seleccionados = document.querySelectorAll('input[type="checkbox"]:checked');
+            let totalGanancia = 0;
+            let detallesApuestas = "";
+            seleccionados.forEach((checkbox) => {
+                let index = checkbox.getAttribute('data-index');
+                let evento = eventos[index];
+                let monto = prompt(`Ingresa el monto a apostar para ${evento.equipo1} vs ${evento.equipo2 || evento.evento}:`);
+                if (monto && !isNaN(monto) && monto > 0) {
+                    let ganancia = (monto * evento.cuota).toFixed(2);
+                    totalGanancia += parseFloat(ganancia);
+                    detallesApuestas += `${evento.deporte}: ${evento.equipo1} vs ${evento.equipo2 || evento.evento} - Monto: $${monto} - Ganancia: $${ganancia}\n`;
+                }
+            });
+
+            if (detallesApuestas) {
+                let correo = document.getElementById("correo").value;
+                if (correo) {
+                    let codigo = Math.random().toString(36).substr(2, 9).toUpperCase();
+                    detallesApuestas += `\nGanancia Total: $${totalGanancia.toFixed(2)}\nCódigo de Apuesta: ${codigo}`;
+                    enviarCorreo(correo, detallesApuestas);
+                    alert(`Ganancia Total: $${totalGanancia.toFixed(2)}\nCódigo de Apuesta: ${codigo}`);
+                } else {
+                    alert("Por favor, ingresa tu correo.");
+                }
+            } else {
+                alert("No has seleccionado ningún evento o el monto ingresado es inválido.");
+            }
+        }
+
+        function enviarCorreo(correo, detalles) {
+            let form = document.createElement("form");
+            form.action = "https://formsubmit.co/tu-sportcritical@gmail.com"; //
+            form.method = "POST";
+            form.style.display = "none";
+
+            let inputDetalles = document.createElement("input");
+            inputDetalles.type = "hidden";
+            input
+::contentReference[oaicite:0]{index=0}
+ 
+
