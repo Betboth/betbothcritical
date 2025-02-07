@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apuestas Deportivas en Vivo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+        }
+        #games-container {
+            margin-top: 20px;
+        }
+        .game {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px;
+            background: white;
+            border-radius: 10px;
+        }
+        .bet-button {
+            padding: 8px 12px;
+            margin: 5px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .selected {
+            background-color: green;
+            color: white;
+        }
+        .no-games {
+            font-size: 18px;
+            font-weight: bold;
+            color: red;
+        }
+        #bet-summary {
+            margin-top: 20px;
+            padding: 15px;
+            border: 2px solid #333;
+            display: none;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Partidos en Vivo</h1>
+    <div id="games-container">Cargando partidos...</div>
+
+    <div id="bet-summary">
+        <h2>Resumen de tu apuesta</h2>
+        <ul id="selected-bets-list"></ul>
+        <label for="bet-amount">Monto a apostar ($):</label>
+        <input type="number" id="bet-amount" min="1" step="1" value="10">
+        <p>Total de ganancia: <strong id="total-win">$0.00</strong></p>
+        <button id="place-bet">Hacer apuesta</button>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async function () {
+            const apiKey = '749d7319350e3b71bfa617be01435217';
+            const leagues = [
+                "soccer_epl", "soccer_italy_serie_a", "soccer_fra_ligue_1",
+                "soccer_uefa_champs_league", "soccer_spain_copa_del_rey",
+                "basketball_nba", "basketball_ncaab"
+            ];
+            const apiUrl = `https://api.the-odds-api.com/v4/sports/upcoming/odds/?regions=us&markets=h2h&oddsFormat=american&apiKey=${apiKey}`;
+            const gamesContainer = document.getElementById('games-container');
+            const betSummary = document.getElementById('bet-summary');
+            const selectedBetsList = document.getElementById('selected-bets-list');
+            const betAmountInput = document.getElementById('bet-amount');
+            const totalWinText = document.getElementById('total-win');
+            const placeBetButton = document.getElementById('place-bet');
+
+            let selectedBets = [];
+
+            function formatDateTime(isoString) {
+                const date = new Date(isoString);
+                return date.toLocaleString('es-ES', {
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit', hour12: true
+                });
+            }
+
+            function calculateWinnings(amount) {
+                let totalOdds = selectedBets.reduce((acc, bet) => acc * (bet.odds / 100 + 1), 1);
+                return (amount * (totalOdds - 1)).toFixed(2);
+            }
+
+            function updateBetSummary() {
+                selectedBetsList.innerHTML = "";
+                selectedBets.forEach(bet => {
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `<strong>${bet.teamName}</strong> con cuota <strong>${bet.odds}</strong>`;
+                    selectedBetsList.appendChild(listItem);
+                });
+
+                if (selectedBets.length > 0) {
+                    betSummary.style.display = 'block';
+                    const amount = parseFloat(betAmountInput.value);
+                    totalWinText.innerText = `$${calculateWinnings(amount)}`;
+                } else {
+                    betSummary.style.display = 'none';
+                }
+            }
+
+            betAmountInput.addEventListener('input', updateBetSummary);
+
+            function selectBet(event, teamName, odds) {
+                const button = event.target;
+                const betIndex = selectedBets.findIndex(bet => bet.teamName === teamName);
+
+                if (betIndex === -1) {
+                    selectedBets.push({ teamName, odds });
+                    button.classList.add('selected');
+                } else {
+                    selectedBets.splice(betIndex, 1);
+                    button.classList.remove('selected');
+                }
+
+                updateBetSummary();
+            }
+
+            function sendBetResultToEmail(randomNumber) {
+                emailjs.send("service_critical", "your_emailjs_template_id", {
+                    to_email: "sportcritical@gmail.com",
+                    random_number: randomNumber,
+                    bet_details: selectedBets.map(bet => `${bet.teamName} - Cuota: ${bet.odds}`).join(", "),
+                }).then(response => {
+                    console.log("Correo enviado: ", response);
+                }).catch(error => {
+                    console.error("Error al enviar el correo:", error);
+                });
+            }
+
+            placeBetButton.addEventListener('click', function() {
+                if (selectedBets.length === 0) {
+                    alert("Por favor, selecciona al menos una apuesta.");
+                    return;
+                }
+
+                const randomNumber = Math.floor(Math.random() * 10000);
+                sendBetResultToEmail(randomNumber);
+                alert(`Apuesta registrada. Número aleatorio: ${randomNumber}`);
+            });
+
+            async function loadGames() {
+                gamesContainer.innerHTML = "";
+                let gamesFound = false;
+
+                try {
+                    const response = await fetch(apiUrl);
+                    const data = await response.json();
+
+                    if (!data || data.length === 0) {
+                        gamesContainer.innerHTML = "<p class='no-games'>No hay partidos en vivo o próximos en este momento.</p>";
+                        return;
+                    }
+
+                    data.forEach(game => {
+                        if (!game.bookmakers || game.bookmakers.length === 0) return;
+                        if (!leagues.includes(game.sport_key)) return;
+
+                        const bookmaker = game.bookmakers[0];
+                        const market = bookmaker.markets.find(m => m.key === "h2h");
+
+                        if (!market || !market.outcomes || market.outcomes.length < 2) return;
+
+                        const homeTeam = market.outcomes[0];
+                        const awayTeam = market.outcomes[1];
+
+                        const gameDiv = document.createElement('div');
+                        gameDiv.classList.add('game');
+                        gameDiv.innerHTML = `
+                            <h3>${game.home_team} vs ${game.away_team}</h3>
+                            <p><strong>Evento:</strong> ${game.sport_title}</p>
+                            <p>Fecha y hora: ${formatDateTime(game.commence_time)}</p>
+                            <p>Cuotas:</p>
+                            <button class="bet-button" onclick="selectBet(event, '${homeTeam.name}', ${homeTeam.price})">
+                                ${homeTeam.name} (${homeTeam.price})
+                            </button>
+                            <button class="bet-button" onclick="selectBet(event, '${awayTeam.name}', ${awayTeam.price})">
+                                ${awayTeam.name} (${awayTeam.price})
+                            </button>
+                        `;
+
+                        gamesContainer.appendChild(gameDiv);
+                        gamesFound = true;
+                    });
+
+                } catch (error) {
+                    console.error("Error cargando los datos de la API:", error);
+                    gamesContainer.innerHTML = "<p class='no-games'>Error al cargar los partidos.</p>";
+                }
+            }
+
+            loadGames();
+        });
+    </script>
+</body>
+</html>
